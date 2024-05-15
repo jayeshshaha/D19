@@ -1,0 +1,113 @@
+Models
+------------------------------
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations;
+namespace dotnetapp.Models
+{
+    public class Product
+    {
+        [Key]
+        public int Id { get; set; }
+
+        [Required]
+        public string Name { get; set; }
+
+        [Required]
+        public string Category { get; set; }
+
+        [Required]
+        public decimal Price { get; set; }
+
+        [Required]
+        public int Stock { get; set; }
+
+    }
+}
+
+Data
+--------------------------------------------------
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using dotnetapp.Models;
+using Microsoft.EntityFrameworkCore;
+
+namespace dotnetapp.Data
+{
+    public class ApplicationDbContext : DbContext
+    {
+        public DbSet<Product> Products { get; set; }
+       public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
+       {
+        
+       }   
+     
+    }
+}
+
+Controllers
+-----------------------------------------------
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using dotnetapp.Data;
+using dotnetapp.Models;
+
+using Microsoft.AspNetCore.Mvc;
+
+namespace dotnetapp.Controllers
+{
+    [ApiController]
+    // [Route("api/[controller]")]
+    [Route("api/products")]
+    public class ProductController : ControllerBase
+    {
+        private readonly ApplicationDbContext ctx ;
+        public ProductController(ApplicationDbContext ctr)
+        {
+            this.ctx = ctr;
+        }
+
+        [Route("")]
+        public IActionResult GetProducts(){
+            List<Product> products = ctx.Products.ToList();
+            return Ok(products);
+        }
+
+        [Route("{id}")]
+        public IActionResult GetProductById(int id){
+            Product product = ctx.Products.Find(id);
+            if(product == null){
+                return NotFound();
+            }
+            return Ok(product);
+        }
+        
+        [Route("filter/{category}")]
+        public IActionResult GetProdutsByCategory(string category){
+            List<Product> products = ctx.Products.Where(i => i.Category == category).ToList();
+            if(products.Count == 0){
+                return NotFound();
+            }
+            return Ok(products);
+            
+        }
+
+        [HttpPost,Route("")]
+        public IActionResult CreateProduct(Product product){
+            if(!ModelState.IsValid){
+                return BadRequest(ModelState);
+            }
+            ctx.Products.Add(product);
+            ctx.SaveChanges();
+            return Ok();
+        }
+
+
+    }
+}
