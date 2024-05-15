@@ -88,7 +88,7 @@ namespace dotnetapp.Controllers
             return Ok(product);
         }
         
-        [Route("filter/{category}")]
+        [Route("filter")]
         public IActionResult GetProdutsByCategory(string category){
             List<Product> products = ctx.Products.Where(i => i.Category == category).ToList();
             if(products.Count == 0){
@@ -98,14 +98,14 @@ namespace dotnetapp.Controllers
             
         }
 
-        [HttpPost,Route("")]
+        [HttpPost]
         public IActionResult CreateProduct(Product product){
             if(!ModelState.IsValid){
                 return BadRequest(ModelState);
             }
             ctx.Products.Add(product);
             ctx.SaveChanges();
-            return Ok();
+            return CreatedAtAction("CreateProduct",product);
         }
 
 
