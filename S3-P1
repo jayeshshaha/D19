@@ -1,0 +1,134 @@
+Models
+---------------------------------
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace dotnetapp.Models
+{
+    public class Book
+    {
+        [Key]
+        public int Id { get; set; }
+
+        [Required]
+        public string Title { get; set; }
+
+        [Required]
+        public string Author { get; set; }
+
+        [Required]
+        public decimal Price { get; set; }
+    }
+}
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using dotnetapp.Models;
+using Microsoft.EntityFrameworkCore;
+
+namespace dotnetapp.Models
+{
+    public class ApplicationDbContext : DbContext
+    {
+        public DbSet<Book> Books { get; set; }
+       public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
+       {
+        
+       }
+       protected override void OnModelCreating(ModelBuilder modelBuilder){
+           base.OnModelCreating(modelBuilder);
+
+           modelBuilder.Entity<Book>().HasData(
+               new Book(){
+                    Id = 1,
+                    Title = "Jayesh book",
+                    Author = "Sample",
+                    Price =  23123
+               }, 
+               new Book(){
+                    Id = 2,
+                    Title = "Alex book",
+                    Author = "Sample Lorem-epsum",
+                    Price =  90000
+               }, 
+               new Book(){
+                    Id = 3,
+                    Title = "Dex book",
+                    Author = "NKJBDkjabksblkaslkfb Lorem-epsum",
+                    Price =  800
+               }
+           );
+       }   
+     
+    }
+}
+Controllers
+---------------------------------
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using dotnetapp.Models;
+using Microsoft.AspNetCore.Mvc;
+
+namespace dotnetapp.Controllers
+{
+    [ApiController]
+    [Route("api/book")]
+    public class BookController : ControllerBase
+    {
+        private readonly ApplicationDbContext ctx;
+        public BookController(ApplicationDbContext ctx)
+        {
+            this.ctx = ctx;
+        }
+
+        [Route("")]
+        public IActionResult Index(){
+            List<Book> books = ctx.Books.ToList();
+            if(books.Count == 0){
+                return NotFound();
+            }
+            return Ok(books);
+        }
+        
+        [Route("filter")]
+        public IActionResult Search(string search){
+            List<Book> books = ctx.Books.Where(i => i.Title.Contains(search)).ToList();
+            if(books.Count == 0){
+                return NotFound();
+            }
+            return Ok(books);
+        }
+
+        [Route("{id}")]
+        public IActionResult Details(int id){
+            Book book = ctx.Books.Find(id);
+            if(book == null){
+                return NotFound();
+            }
+            return Ok(book);
+        }
+
+        [HttpPost, Route("")]
+        public IActionResult Purchase(Book book){
+            if(!ModelState.IsValid){
+                return BadRequest();
+            }
+            ctx.Books.Add(book);
+            ctx.SaveChanges();
+            return CreatedAtAction("Purchase",book);
+        }
+
+
+        
+    }
+}
+
+
